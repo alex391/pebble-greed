@@ -1,210 +1,147 @@
 /*
-Copyright (c) 2024 Alex Leute
+copyright (c) 2024, 2026 alex leute
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
+permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "software"), to deal
+in the software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+copies of the software, and to permit persons to whom the software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+the above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+the software is provided "as is", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and noninfringement. in no event shall the
+authors or copyright holders be liable for any claim, damages or other
+liability, whether in an action of contract, tort or otherwise, arising from,
+out of or in connection with the software or the use or other dealings in the
+software.
 */
 
 /*
-  This file contains all of the actual game logic - so everythig that isn't
+  this file contains all of the actual game logic - so everythig that isn't
   drawing to the screen or getting button inputs
 
-  This has been translated from an Aurduino C++ version for Wio Terminal
+  this has been translated from an aurduino c++ version for wio terminal
   https://gist.github.com/alex391/c13f53c876c2ca99fafaacd4404522a4
 */
+
+
+// TODO: Uh, undo lowercasing of whole file! (how did I even do that without noticing? vim moment)
+// just switch to snake_case I think?
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 // two bigger than the actuall playable area to pad with zero around the edges
-#define BOARD_WIDTH (19 + 2)
-#define BOARD_HEIGHT (12 + 2)
+#define board_width (19 + 2)
+#define board_height (12 + 2)
 
-// In milliseconds
-#define BLINKING_DELAY 500
+// in milliseconds
+#define blinking_delay 500
 
-#define DEBUG false
+#define debug false
 
-void fillBoard();
-void drawBoard();
-void heartbeat();
-void blinkCursor();
+void fillboard();
 void movement();
-struct MovementVector getButtons();
-void drawCursor(uint32_t color);
-size_t getValidDirections(struct MovementVector *directions);  // directions should have enough space for 8 MovementVectors
-bool checkDirection(struct MovementVector direction); // true if the player won't hit any zeros going that way
-bool movementVectorIn(struct MovementVector needle, struct MovementVector *haystack, size_t size);
-void drawDirection(struct MovementVector direction);
+struct movementvector getbuttons();
+size_t getvaliddirections(struct movementvector *directions);  // directions should have enough space for 8 movementvectors
+bool checkdirection(struct movementvector direction); // true if the player won't hit any zeros going that way
+bool movementvectorin(struct movementvector needle, struct movementvector *haystack, size_t size);
 void hint();
 void reset();
-bool isEmpty(struct MovementVector this);
-uint8_t movementDistance(struct MovementVector this);
-bool MovementVectorEquals();
+bool isempty(struct movementvector this);
+uint8_t movementdistance(struct movementvector this);
+bool movementvectorequals(struct movementvector lhs, struct movementvector rhs);
+int32_t randomrange(int32_t min, int32_t max);
 
 uint32_t score = 0;
 
-uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
+uint8_t board[board_height][board_width] = { 0 };
 
-struct Player {
+struct player {
   uint8_t x;
   uint8_t y;
 };
 
-struct Player player = { 1, 1 };
+struct player player = { 1, 1 };
 
-struct MovementVector {
+struct movementvector {
   int8_t x;
   int8_t y;
 
 };
 
-bool isEmpty(struct MovementVector this) {
+bool isempty(struct movementvector this) {
   return this.x == 0 && this.y == 0;
 }
 
-uint8_t movementDistance(struct MovementVector this) {
+uint8_t movementdistance(struct movementvector this) {
  return board[player.y + this.y][player.x + this.x];
 }
 
-bool MovementVectorEquals(struct MovementVector lhs, struct MovementVector rhs) {
+bool movementvectorequals(struct movementvector lhs, struct movementvector rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
 void setup() {
-  randomSeed(analogRead(0));  // Generate some random noise
-
   reset();
 }
 
+// todo: i'm pretty sure this function makes no sense here, delete?
 void loop() {
-  heartbeat();
   hint();
-  if (!digitalRead(WIO_KEY_A)) {
-    demo = true;
-  }
   movement();
-  blinkCursor();
-  delay(POLLING_DELAY);
-  clock += POLLING_DELAY;
 }
 
 void reset() {
   score = 0;
-  demo_score = 0;
-  demo = false;
-  player.x = random(1, BOARD_WIDTH - 1);
-  player.y = random(1, BOARD_HEIGHT - 1);
+  player.x = randomrange(1, board_width - 1);
+  player.y = randomrange(1, board_height - 1);
 
-  fillBoard();
-  drawBoard();
+  fillboard();
 }
 
-void fillBoard() {
-  for (size_t y = 1; y < BOARD_HEIGHT - 1; y++) {
-    for (size_t x = 1; x < BOARD_WIDTH - 1; x++) {
-      board[y][x] = random(1, 8);
+// return a random number betweeen min (inclusive) and max (exclusive)
+int32_t randomrange(int32_t min, int32_t max) {
+  return (rand() % max) + min;
+}
+
+void fillboard() {
+  for (size_t y = 1; y < board_height - 1; y++) {
+    for (size_t x = 1; x < board_width - 1; x++) {
+      board[y][x] = randomrange(1, 8);
     }
   }
   board[player.y][player.x] = 0;
 }
 
-uint32_t lightState = HIGH;
-// blink the light so you know it's working
-void heartbeat() {
-  digitalWrite(LED_BUILTIN, lightState);
-  lightState = !lightState;
-}
-
-void drawBoard() {
-  background.fillSprite(TFT_BLACK);
-  const uint32_t colors[8] = {
-    // Colors to pick from
-    TFT_BLACK,
-    TFT_WHITE,
-    TFT_LIGHTGREY,
-    TFT_GREEN,
-    TFT_GREENYELLOW,
-    TFT_YELLOW,
-    TFT_ORANGE,
-    TFT_RED,
-  };
-  for (size_t y = 1; y < BOARD_HEIGHT - 1; y++) {
-    for (size_t x = 1; x < BOARD_WIDTH - 1; x++) {
-      background.drawChar((x - 1) * FONT_WIDTH, (y - 1) * FONT_HEIGHT, '0' + board[y][x], colors[board[y][x]], TFT_BLACK, FONT_SIZE);
-    }
-  }
-  background.pushSprite(0, 0);
-}
-
-void blinkCursor() {
-  if ((clock % (BLINKING_DELAY * 2)) < BLINKING_DELAY) {
-    drawCursor(TFT_WHITE);
-  } else {
-    drawCursor(TFT_BLACK);
-  }
-}
-
-void drawCursor(uint32_t color) {
-  cursor.fillSprite(color);
-  cursor.pushSprite((player.x - 1) * FONT_WIDTH, (player.y - 1) * FONT_HEIGHT);
-}
-
-#if DEBUG
-size_t previous_directions_count = 9;
-#endif
-
 void movement() {
-  MovementVector valid_directions[8] = { 0 };
-  size_t valid_directions_count = getValidDirections(valid_directions);
-#if DEBUG
-  if (valid_directions_count != previous_directions_count) {
-    Serial.printf("valid_directions_count: %d\n", valid_directions_count);
-    previous_directions_count = valid_directions_count;
-  }
-#endif
+  struct movementvector valid_directions[8] = { 0 };
+  size_t valid_directions_count = getvaliddirections(valid_directions);
   if (valid_directions_count == 0) {
-    // Start the game over with the demo player
-    char game_over_buff[28] = { 0 };  // big enough for "Game over! Score: 999 99.9%\0"
-    float percentage = (float)score * 100.0f / (float)((BOARD_HEIGHT - 2) * (BOARD_WIDTH - 2));
-    snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %d %.1f%%", score, percentage);
-    tft.drawString(game_over_buff, 0, 0);
-    while (getButtons().isEmpty())
-      ;
+    char game_over_buff[28] = { 0 };  // big enough for "game over! score: 999 99.9%\0"
+    float percentage = (float)score * 100.0f / (float)((board_height - 2) * (board_width - 2));
+    snprintf(game_over_buff, sizeof(game_over_buff), "game over! score: %" PRIu32 "%.1f%%", score, percentage);
+    // todo: draw game_over_buff onto the screen, and then wait to be reset
     reset();
   }
-  MovementVector buttons;
-  if (demo) {
-    buttons = greedyButtons(valid_directions, valid_directions_count);
-  } else {
-    buttons = getButtons();
-  }
-  if (buttons.isEmpty()) {
+  struct movementvector buttons;
+  buttons = getbuttons();
+  if (isempty(buttons)) {
     return;
   }
-  MovementVector held_buttons = { 0 };
+  struct movementvector held_buttons = { 0 };
   bool redraw = true;
   do {
-    // have to do some of the main loop things here
-    heartbeat();
-    blinkCursor();
-    held_buttons = getButtons();
+    // todo: this probably makes not a lot of sense here
+    held_buttons = getbuttons();
     // make it easier to go diagonally.
     if (buttons.x == 0 && held_buttons.x != 0) {
       buttons.x = held_buttons.x;
@@ -214,81 +151,55 @@ void movement() {
       buttons.y = held_buttons.y;
       redraw = true;
     }
-#if DEBUG
-    Serial.printf("buttons.x: %d, buttons.y: %d\n", buttons.x, buttons.y);
-#endif
-    if (redraw && movementVectorIn(buttons, valid_directions, valid_directions_count)) {
-      drawBoard();
-      drawDirection(buttons);
-      background.pushSprite(0, 0);
+    if (redraw && movementvectorin(buttons, valid_directions, valid_directions_count)) {
+      // todo: draw the direction the player is moving here
+      // todo: re-draw the board here
       redraw = false;
     }
-    delay(POLLING_DELAY);
-    clock += POLLING_DELAY;
-  } while (!(held_buttons.isEmpty()));  // wait for release
+    // todo: delay(polling_delay);
+  } while (!(isempty(held_buttons)));  // wait for release
 
-
-  if (!movementVectorIn(buttons, valid_directions, valid_directions_count)) {
-    drawBoard();  // Sometimes need to clear the board after an invalid direction (if the direction was previously valid the hint will still be there)
-    return;
-  }
-
-  uint8_t movement_distance = buttons.movementDistance();
+  uint8_t movement_distance = movementdistance(buttons);
   for (; movement_distance > 0; movement_distance--) {
     player.x += buttons.x;
     player.y += buttons.y;
     board[player.y][player.x] = 0;
     score++;
   }
-#if DEBUG
-  Serial.printf("player.x = %d, player.y = %d\n", player.x, player.y);
-#endif
   board[player.y][player.x] = 0;
-  drawBoard();
 }
 
-MovementVector getButtons() {
-  MovementVector v = { 0 };
-  if (!digitalRead(WIO_5S_UP)) {
-    v.y += -1;
-  }
-  if (!digitalRead(WIO_5S_RIGHT)) {
-    v.x += 1;
-  }
-  if (!digitalRead(WIO_5S_DOWN)) {
-    v.y += 1;  // Down is positive y
-  }
-  if (!digitalRead(WIO_5S_LEFT)) {
-    v.x += -1;
-  }
+struct movementvector getbuttons() {
+  struct movementvector v = { 0 };
+  // todo: how to set v here
   return v;
 }
 
-// Play greed... greedily!
-MovementVector greedyButtons(MovementVector *directions, size_t size) {
-  uint8_t max{ 0 };
-  MovementVector max_direction{};
-  for (size_t i; i < size; i++) {
-    if (directions[i].movementDistance() > max) {
-      max = directions[i].movementDistance();
+// play greed... greedily!
+struct movementvector greedybuttons(struct movementvector *directions, size_t size) {
+  uint8_t max = 0;
+  struct movementvector max_direction = { 0 };
+  for (size_t i = 0; i < size; i++) {
+    if (movementdistance(directions[i]) > max) {
+      max = movementdistance(directions[i]);
       max_direction = directions[i];
     }
   }
   return max_direction;
 }
 
-
-// Leaving it up to the caller to make sure directions enough space for 8 directions in it
+// leaving it up to the caller to make sure directions enough space for 8
+// directions in it
 // returns the number of directions that are valid
-size_t getValidDirections(MovementVector *directions) {
+size_t getvaliddirections(struct movementvector *directions) {
   size_t directions_index = 0;
   for (int8_t x = -1; x <= 1; x++) {
     for (int8_t y = -1; y <= 1; y++) {
       if (x == 0 && y == 0) {
         continue;
       }
-      MovementVector v = { x, y };
-      if (checkDirection(v)) {
+      struct movementvector v = { x, y };
+      if (checkdirection(v)) {
         directions[directions_index++] = v;
       }
     }
@@ -296,12 +207,12 @@ size_t getValidDirections(MovementVector *directions) {
   return directions_index;
 }
 
-bool checkDirection(MovementVector direction) {
-  uint8_t movement_distance = direction.movementDistance();
+bool checkdirection(struct movementvector direction) {
+  uint8_t movement_distance = movementdistance(direction);
   if (movement_distance == 0) {
     return false;
   }
-  Player temp_player = player;
+  struct player temp_player = player;
   for (; movement_distance > 0; movement_distance--) {
     temp_player.x += direction.x;
     temp_player.y += direction.y;
@@ -312,59 +223,17 @@ bool checkDirection(MovementVector direction) {
   return true;
 }
 
-void drawDirection(MovementVector direction) {
-#if DEBUG
-  Serial.println("Drawing a direction!");
-#endif
-  uint8_t movement_distance = direction.movementDistance();
-  if (movement_distance == 0) {
-    return;  // shouldn't be here, but not so bad
-  }
-  Player temp_player = player;
-  movement_distance++;  // Skip the first one
-  for (; movement_distance > 1 /* 1 because we skipped the first one */; movement_distance--) {
-    temp_player.x += direction.x;
-    temp_player.y += direction.y;
-    if (board[temp_player.y][temp_player.x] == 0) {
-#if DEBUG
-      Serial.println("drawDirection should only be called with valid directions!");
-#endif
-      return;  // HEY! Why are we here! Stop it!
-    }
-#if DEBUG
-    Serial.printf("Draw a rectangle at %d, %d\n", temp_player.x, temp_player.y);
-#endif
-    background.fillRect((temp_player.x - 1) * FONT_WIDTH, (temp_player.y - 1) * FONT_HEIGHT, FONT_WIDTH, FONT_HEIGHT, TFT_NAVY);
-  }
-}
-
-bool movementVectorIn(MovementVector needle, MovementVector *haystack, size_t size) {
+bool movementvectorin(struct movementvector needle, struct movementvector *haystack, size_t size) {
   for (size_t i = 0; i < size; i++) {
-    if (needle == haystack[i]) {
+    if (movementvectorequals(needle, haystack[i])) {
       return true;
     }
   }
   return false;
 }
 
+// todo: this function is supposed to show you all of the directions you're
+// allowed to go in, and how far they'd take you. since it's all screen drawing,
+// it doesn't really belong here
 void hint() {
-  if (digitalRead(WIO_KEY_C)) {
-    return;
-  }
-  MovementVector valid_directions[8]{ 0 };
-  size_t valid_directions_count = getValidDirections(valid_directions);
-  for (size_t i = 0; i < valid_directions_count; i++) {
-    drawDirection(valid_directions[i]);
-  }
-#if DEBUG
-  Serial.println("Pushing a sprite");
-#endif
-  background.pushSprite(0, 0);
-  while (!digitalRead(WIO_KEY_C) && getButtons().isEmpty()) {
-    heartbeat();
-    blinkCursor();
-    delay(POLLING_DELAY);
-    clock += POLLING_DELAY;
-  }  // Wait for release
-  drawBoard();
 }
