@@ -1,18 +1,15 @@
 #include <pebble.h>
+#include "game.h"
 
 static Window *s_window;
-static TextLayer *s_text_layer;
 
 static void prv_select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(s_text_layer, "Select");
 }
 
 static void prv_up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(s_text_layer, "Up");
 }
 
 static void prv_down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(s_text_layer, "Down");
 }
 
 static void prv_click_config_provider(void *context) {
@@ -21,18 +18,23 @@ static void prv_click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, prv_down_click_handler);
 }
 
-static void prv_window_load(Window *window) {
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
+void draw_board()
+{
+  for (size_t y = 1; y < BOARD_HEIGHT - 1; y++) {
+    for (size_t x = 1; x < BOARD_WIDTH - 1; x++) {
+      graphics_draw_text(ctx, 
+    }
+  }
+}
 
-  s_text_layer = text_layer_create(GRect(0, 72, bounds.size.w, 20));
-  text_layer_set_text(s_text_layer, "Press a button");
-  text_layer_set_text_alignment(s_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
+static void prv_window_load(Window *window) {
+  // Layer *window_layer = window_get_root_layer(window);
+  //GRect bounds = layer_get_bounds(window_layer);
+
+
 }
 
 static void prv_window_unload(Window *window) {
-  text_layer_destroy(s_text_layer);
 }
 
 static void prv_init(void) {
@@ -42,6 +44,7 @@ static void prv_init(void) {
     .load = prv_window_load,
     .unload = prv_window_unload,
   });
+
   const bool animated = true;
   window_stack_push(s_window, animated);
 }
