@@ -21,6 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef GAME_H
 #define GAME_H
 
+#include <pebble.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -28,13 +29,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <inttypes.h>
 // two bigger than the actuall playable area to pad with zero around the edges
-#define BOARD_WIDTH (14 + 2)
-#define BOARD_HEIGHT (12 + 2)
+// these are probably the wrong values for some platforms - might actualy set these dynamically
+#define BOARD_WIDTH (11 + 2)
+#define BOARD_HEIGHT (9 + 2)
 
 // in milliseconds
 #define BLINKING_DELAY 500
 
-uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
 
 void fill_board();
 void movement();
@@ -44,8 +45,10 @@ bool check_direction(struct movement_vector direction); // true if the player wo
 bool movement_vector_in(struct movement_vector needle, struct movement_vector *haystack, size_t size);
 void hint();
 void reset();
+void setup();
 bool is_empty(struct movement_vector);
 uint8_t movement_distance(struct movement_vector);
+int8_t board_get(int32_t x, int32_t y);
 bool movement_vector_equals(struct movement_vector lhs, struct movement_vector rhs);
 int32_t random_range(int32_t min, int32_t max);
 

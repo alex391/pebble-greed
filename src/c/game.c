@@ -26,7 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   this has been translated from an aurduino c++ version for wio terminal
   https://gist.github.com/alex391/c13f53c876c2ca99fafaacd4404522a4
 */
-
+#include <pebble.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -36,6 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "game.h"
 
 uint32_t score = 0;
+uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
+
 
 
 struct player player = { 1, 1 };
@@ -47,6 +49,14 @@ bool is_empty(struct movement_vector this) {
 
 uint8_t movement_distance(struct movement_vector this) {
  return board[player.y + this.y][player.x + this.x];
+}
+
+// Get from the board, returns -1 if x or y are out of bounds
+int8_t board_get(int32_t x, int32_t y) {
+  if (x > 0 && x < BOARD_WIDTH && y > 0 && y < BOARD_HEIGHT) {
+    return board[y][x];
+  }
+  return -1;
 }
 
 bool movement_vector_equals(struct movement_vector lhs, struct movement_vector rhs) {
