@@ -3,7 +3,6 @@
 
 #define CHARACTER_WIDTH 13
 #define CHARACTER_HEIGHT 17
-#define CHARACTER_KERNING 3 /* this might not get used */
 
 static Window *s_window;
 
@@ -34,21 +33,45 @@ void log_and_spin(const char *message, int32_t line) {
   while(true);
 }
 
+GColor get_color(int8_t board_value) {
+  // colors to pick from
+ const GColor colors[MAX_NUMBER + 1] = {
+    GColorBlack, // the color of 0 is black - so it'll be invisible
+    GColorBlue,
+    GColorCyan,
+    GColorGreen,
+    GColorSpringBud,
+    GColorYellow,
+    GColorOrange,
+    GColorRed,
+    GColorFolly
+  };
+
+  if (board_value >= 0 && board_value < MAX_NUMBER + 1) {
+    return COLOR_FALLBACK(colors[board_value], board_value == 0? GColorBlack: GColorWhite);
+  }
+  debug_log("Invalid board_value in get_color", __LINE__);
+  return GColorWhite;
+}
+
 void draw_board(GContext *ctx, const GFont font)
 {
   for (int32_t y = 1; y < BOARD_HEIGHT - 1; y++) {
     for (int32_t x = 1; x < BOARD_WIDTH - 1; x++) {
-      volatile int8_t board_value = board_get(x, y);
+      int8_t board_value = board_get(x, y);
       if (board_value < 0) {
         debug_log("Tried to draw the board out of bounds!", __LINE__);
         continue; // just skip it
       }
+
       GRect text_bounds = { .origin = { .x = (x - 1) * CHARACTER_WIDTH, .y = (y - 1) * CHARACTER_HEIGHT }, .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
       char text_buffer[2] = { board_value + '0', '\0' };
+      graphics_context_set_text_color(ctx, get_color(board_value));
       graphics_draw_text(ctx, text_buffer, font, text_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     }
   }
 }
+
 
 
 static void prv_window_load(Window *window) {
@@ -59,7 +82,6 @@ static void prv_window_unload(Window *window) {
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GFont numbers_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS); // TODO this font's kinda small
-  graphics_context_set_text_color(ctx, GColorBlack);
 
   draw_board(ctx, numbers_font);
 }
@@ -74,6 +96,7 @@ static void prv_init(void) {
   });
 
   const bool animated = true;
+  window_set_background_color(s_window, GColorBlack);
   window_stack_push(s_window, animated);
 
   setup();

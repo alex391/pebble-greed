@@ -53,7 +53,7 @@ uint8_t movement_distance(struct movement_vector this) {
 
 // Get from the board, returns -1 if x or y are out of bounds
 int8_t board_get(int32_t x, int32_t y) {
-  if (x > 0 && x < BOARD_WIDTH && y > 0 && y < BOARD_HEIGHT) {
+  if (x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT) {
     return board[y][x];
   }
   return -1;
@@ -89,7 +89,7 @@ int32_t random_range(int32_t min, int32_t max) {
 void fill_board() {
   for (size_t y = 1; y < BOARD_HEIGHT - 1; y++) {
     for (size_t x = 1; x < BOARD_WIDTH - 1; x++) {
-      board[y][x] = random_range(1, 8);
+      board[y][x] = random_range(1, MAX_NUMBER);
     }
   }
   board[player.y][player.x] = 0;
@@ -104,7 +104,7 @@ void movement() {
     snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 "%.1f%%", score, percentage);
     // TODO: draw game_over_buff onto the screen, and then wait to be reset
  
- reset();
+    reset();
   }
   struct movement_vector buttons;
   buttons = get_buttons();

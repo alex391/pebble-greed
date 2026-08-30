@@ -36,6 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // in milliseconds
 #define BLINKING_DELAY 500
 
+#define MAX_NUMBER 8
+
 
 void fill_board();
 void movement();
