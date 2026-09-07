@@ -38,7 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 uint32_t score = 0;
 uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
 
-
+struct movement_vector buttons = { 0 };
 
 struct player player = { 1, 1 };
 
@@ -59,6 +59,10 @@ int8_t board_get(int32_t x, int32_t y) {
   return -1;
 }
 
+struct player get_player() {
+  return player;
+}
+
 bool movement_vector_equals(struct movement_vector lhs, struct movement_vector rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
 }
@@ -75,8 +79,8 @@ void loop() {
 
 void reset() {
   score = 0;
-  player.x = random_range(1, BOARD_WIDTH - 1);
-  player.y = random_range(1, BOARD_HEIGHT - 1);
+  player.x = random_range(1, BOARD_WIDTH - 2);
+  player.y = random_range(1, BOARD_HEIGHT - 2);
 
   fill_board();
 }
@@ -103,7 +107,7 @@ void movement() {
     float percentage = (float)score * 100.0f / (float)((BOARD_HEIGHT - 2) * (BOARD_WIDTH - 2));
     snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 "%.1f%%", score, percentage);
     // TODO: draw game_over_buff onto the screen, and then wait to be reset
- 
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", game_over_buff);
     reset();
   }
   struct movement_vector buttons;
@@ -111,27 +115,6 @@ void movement() {
   if (is_empty(buttons)) {
     return;
   }
-  struct movement_vector held_buttons = { 0 };
-  bool redraw = true;
-  do {
-    // todo: this probably makes not a lot of sense here
-    held_buttons = get_buttons();
-    // make it easier to go diagonally.
-    if (buttons.x == 0 && held_buttons.x != 0) {
-      buttons.x = held_buttons.x;
-      redraw = true;
-    }
-    if (buttons.y == 0 && held_buttons.y != 0) {
-      buttons.y = held_buttons.y;
-      redraw = true;
-    }
-    if (redraw && movement_vector_in(buttons, valid_directions, valid_directions_count)) {
-      // todo: draw the direction the player is moving here
-      // todo: re-draw the board here
-      redraw = false;
-    }
-    // todo: delay(polling_delay);
-  } while (!(is_empty(held_buttons)));  // wait for release
 
   uint8_t movement_dist = movement_distance(buttons);
   for (; movement_dist> 0; movement_dist--) {
@@ -144,10 +127,65 @@ void movement() {
 }
 
 struct movement_vector get_buttons() {
-  struct movement_vector v = { 0 };
-  // todo: how to set v here
-  return v;
+  return buttons;
 }
+
+
+void set_buttons(int8_t x, int8_t y) {
+  if (x < -1 || x > 1 || y < -1 || y > 1) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting buttons to out of range %d, %d", x, y);
+  }
+  buttons.x = x;
+  buttons.y = y;
+}
+
+// return min of a and b
+int8_t int8_t_min(int8_t a, int8_t b) {
+  if (a < b) {
+    return a;
+  }
+  return b;
+}
+
+// return max of a and b
+int8_t int8_t_max(int8_t a, int8_t b) {
+  if (a > b) {
+    return a;
+  }
+  return b;
+}
+
+// return a value that's between lower_bounds and upper_bounds, inclusive,
+// that's closeset to x
+int8_t int8_t_move_into_range(int8_t lower_bounds, int8_t x, int8_t upper_bounds) {
+  int8_t above_lower = int8_t_max(lower_bounds, x);
+  return int8_t_min(upper_bounds, above_lower);
+}
+
+void combine_buttons(enum direction direction) {
+  struct movement_vector buttons_copy = buttons;
+  switch (direction) {
+    case UP:
+      // If it's confusing to you that negitive y is up, just immagine the
+      // enemy's gate on the top of the board
+      buttons_copy.y--;
+      break;
+    case DOWN:
+      buttons_copy.y++;
+      break;
+    case LEFT:
+      buttons_copy.x--;
+      break;
+    case RIGHT:
+      buttons_copy.x++;
+      break;
+  }
+  buttons.x = int8_t_move_into_range(-1, buttons_copy.x, 1);
+  buttons.y = int8_t_move_into_range(-1, buttons_copy.y, 1);
+
+}
+
+
 
 // play greed... greedily!
 struct movement_vector greedybuttons(struct movement_vector *directions, size_t size) {
@@ -211,3 +249,4 @@ bool movement_vector_in(struct movement_vector needle, struct movement_vector *h
 // it doesn't really belong here
 void hint() {
 }
+

@@ -29,7 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <inttypes.h>
 // two bigger than the actuall playable area to pad with zero around the edges
-// these are probably the wrong values for some platforms - might actualy set these dynamically
+// TODO: set these to the right value for all platforms
 #define BOARD_WIDTH (11 + 2)
 #define BOARD_HEIGHT (9 + 2)
 
@@ -38,6 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define MAX_NUMBER 8
 
+enum direction { UP, DOWN, LEFT, RIGHT };
 
 void fill_board();
 void movement();
@@ -53,6 +54,9 @@ uint8_t movement_distance(struct movement_vector);
 int8_t board_get(int32_t x, int32_t y);
 bool movement_vector_equals(struct movement_vector lhs, struct movement_vector rhs);
 int32_t random_range(int32_t min, int32_t max);
+struct player get_player();
+void set_buttons(int8_t x, int8_t y);
+void combine_buttons(enum direction direction);
 
 struct player {
   uint8_t x;
