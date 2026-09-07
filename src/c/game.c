@@ -228,12 +228,12 @@ size_t get_valid_directions(struct movement_vector *directions) {
 }
 
 bool check_direction(struct movement_vector direction) {
-  uint8_t movement_dist= movement_distance(direction);
-  if (movement_dist== 0) {
+  uint8_t movement_dist = movement_distance(direction);
+  if (movement_dist == 0) {
     return false;
   }
   struct player temp_player = player;
-  for (; movement_dist> 0; movement_dist--) {
+  for (; movement_dist > 0; movement_dist--) {
     temp_player.x += direction.x;
     temp_player.y += direction.y;
     if (board[temp_player.y][temp_player.x] == 0) {
