@@ -100,30 +100,38 @@ void fill_board() {
 }
 
 void movement() {
-  struct movement_vector valid_directions[8] = { 0 };
-  size_t valid_directions_count = get_valid_directions(valid_directions);
-  if (valid_directions_count == 0) {
-    char game_over_buff[28] = { 0 };  // big enough for "Game over! Score: 999 99.9%\0"
-    float percentage = (float)score * 100.0f / (float)((BOARD_HEIGHT - 2) * (BOARD_WIDTH - 2));
-    snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 "%.1f%%", score, percentage);
-    // TODO: draw game_over_buff onto the screen, and then wait to be reset
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", game_over_buff);
-    reset();
-  }
-  struct movement_vector buttons;
-  buttons = get_buttons();
   if (is_empty(buttons)) {
     return;
   }
 
+  struct movement_vector valid_directions[8] = { 0 };
+  size_t valid_directions_count = get_valid_directions(valid_directions);
+
+
+  if (!movement_vector_in(buttons, valid_directions, valid_directions_count)) {
+    return;
+  }
+
   uint8_t movement_dist = movement_distance(buttons);
-  for (; movement_dist> 0; movement_dist--) {
+  for (; movement_dist > 0; movement_dist--) {
     player.x += buttons.x;
     player.y += buttons.y;
     board[player.y][player.x] = 0;
     score++;
   }
   board[player.y][player.x] = 0;
+
+  valid_directions_count = get_valid_directions(valid_directions);
+  if (valid_directions_count == 0) {
+    char game_over_buff[40] = { 0 };  // big enough for "Game over! Score: 999 99.9%\0"
+    float percentage = (float)score * 100.0f / (float)((BOARD_HEIGHT - 2) * (BOARD_WIDTH - 2));
+    int32_t percentage_whole_part = (int32_t)percentage;
+    int32_t percentage_fraction_part = (int32_t)((percentage - (float)percentage_whole_part) * 10.0f); 
+    snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 " %" PRIi32 ".%" PRIi32 "%%", score, percentage_whole_part, percentage_fraction_part);
+    // TODO: draw game_over_buff onto the screen, and then wait to be reset
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", game_over_buff);
+    reset();
+  }
 }
 
 struct movement_vector get_buttons() {
