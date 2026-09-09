@@ -80,7 +80,7 @@ static void prv_down_click_handler(ClickRecognizerRef recognizer, void *context)
 }
 
 static void prv_back_click_handler(ClickRecognizerRef recognizer, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Back clicked"); // TODO hown to make this go
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Back clicked");
   set_click_timer();
   combine_buttons(LEFT);
 }
