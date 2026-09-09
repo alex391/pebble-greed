@@ -29,13 +29,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <inttypes.h>
 // two bigger than the actuall playable area to pad with zero around the edges
-// TODO: set these to the right value for all platforms
-#define BOARD_WIDTH (11 + 2)
-#define BOARD_HEIGHT (9 + 2)
+// TODO: set these to the right value for all platforms - or calculate based on screen size
+#define BOARD_WIDTH (15 + 2)
+#define BOARD_HEIGHT (14 + 2)
 
 // in milliseconds
 #define BLINKING_DELAY 500
 
+// TODO this will need a different value for other platforms
 #define MAX_NUMBER 8
 
 enum direction { UP, DOWN, LEFT, RIGHT };
