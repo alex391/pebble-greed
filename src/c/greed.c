@@ -51,9 +51,14 @@ void log_and_spin(const char *message, int32_t line) {
 }
 
 void unclick(void *data) {
-  button_timer = NULL;
-  gameover = false;
   APP_LOG(APP_LOG_LEVEL_DEBUG, "unclick");
+  button_timer = NULL;
+  if (gameover) {
+    gameover = false;
+    layer_mark_dirty(s_canvas_layer);
+    set_buttons(0, 0);
+    return;
+  }
   struct movement_vector current_buttons = get_buttons();
   APP_LOG(APP_LOG_LEVEL_DEBUG, "buttons registered: %d, %d", current_buttons.x, current_buttons.y);
   movement();
