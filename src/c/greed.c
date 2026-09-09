@@ -19,6 +19,8 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <pebble.h>
+#include <limits.h>
+#include "greed.h"
 #include "game.h"
 
 #define CHARACTER_WIDTH 13
@@ -28,11 +30,29 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static Window *s_window;
 static Layer *s_canvas_layer;
+static GContext *context;
+static char gameover_text[40] = { 0 };
+static bool gameover = false;
 
 AppTimer *button_timer = NULL;
 
+// helper for logging, with a line number
+void debug_log(const char *message, int32_t line) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "%s: line %d", message, line);
+}
+
+// The idea here is to just print a message to the console and then just do
+// nothing forever because something irricoverably bad happened
+void log_and_spin(const char *message, int32_t line) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "%s: %d", message, line);
+  while(true) {
+    psleep(INT_MAX);
+  }
+}
+
 void unclick(void *data) {
   button_timer = NULL;
+  gameover = false;
   APP_LOG(APP_LOG_LEVEL_DEBUG, "unclick");
   struct movement_vector current_buttons = get_buttons();
   APP_LOG(APP_LOG_LEVEL_DEBUG, "buttons registered: %d, %d", current_buttons.x, current_buttons.y);
@@ -51,7 +71,7 @@ void set_click_timer() {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "rescheduled");
     if (!rescheduled) {
       // ...not really sure how we got here
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "button_timer not NULL, but timer not rescheduled!");
+      debug_log("button_timer not NULL, but timer not rescheduled!", __LINE__);
       // just try again?
       button_timer = NULL;
       set_click_timer();
@@ -94,17 +114,7 @@ static void prv_click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_BACK, prv_back_click_handler);
 }
 
-// helper for logging, with a line number
-void debug_log(const char *message, int32_t line) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "%s: line %d", message, line);
-}
 
-// The idea here is to just print a message to the console and then just do
-// nothing forever because something irricoverably bad happened
-void log_and_spin(const char *message, int32_t line) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "%s: %d", message, line);
-  while(true);
-}
 
 GColor get_color(int8_t board_value) {
   // colors to pick from
@@ -142,10 +152,11 @@ GRect fudge_top_margin(GRect rect) {
   rect.origin.y -= 6;
   return rect;
 }
+
 // Adjust the rectangle to match the fudge above
 GRect fudge_rectangle(GRect rect) {
   rect.origin.y -= 1;
-   rect.size.w -= 1;
+  rect.size.w -= 1;
   return rect;
 }
 
@@ -167,22 +178,47 @@ void draw_board(GContext *ctx, const GFont font)
   }
 }
 
-void draw_player(GContext *ctx, struct player player, bool blink_on, const GFont font) {
+void draw_player(GContext *ctx, struct player player) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Drawing player at %d, %d", player.x, player.y);
   GPoint text_gpoint = board_coordinate_to_gpoint(player.x - 1, player.y - 1);
   GRect text_bounds = { .origin = text_gpoint, .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
-  const char *at = "9"; // TODO this is the wrong character
-  if (blink_on) {
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_rect(ctx, fudge_rectangle(text_bounds), 0, GCornerNone);
-    graphics_context_set_text_color(ctx, GColorBlack);
-    graphics_draw_text(ctx, at, font, fudge_top_margin(text_bounds), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  }
-  else {
-    graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, at, font, fudge_top_margin(text_bounds), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  }
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, fudge_rectangle(text_bounds), 0, GCornerNone);
+}
 
+
+void draw_text()
+{
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Drawing text: %s", gameover_text);
+  GFont text_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+  GRect text_bounds = { .origin = { 0 }, .size = { .w = PBL_DISPLAY_WIDTH, .h = PBL_DISPLAY_HEIGHT } };
+  graphics_context_set_fill_color(context, GColorBlack);    
+  graphics_fill_rect(context, text_bounds, 0, GCornerNone);
+  graphics_context_set_text_color(context, GColorWhite);
+  graphics_draw_text(context, gameover_text, text_font, text_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+}
+
+// Source - https://stackoverflow.com/a/41885173
+// Posted by chqrlie, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-09-09, License - CC BY-SA 4.0
+char *safe_strcpy(char* restrict dest, size_t size, const char* restrict src) {
+    if (size > 0) {
+        size_t i;
+        for (i = 0; i < size - 1 && src[i]; i++) {
+             dest[i] = src[i];
+        }
+        dest[i] = '\0';
+    }
+    return dest;
+}
+
+
+void set_gameover_text(const char *text) {
+  safe_strcpy(gameover_text, sizeof(gameover_text), text);
+}
+
+void set_gameover(bool value) {
+  gameover = value;
 }
 
 
@@ -194,10 +230,13 @@ static void prv_window_unload(Window *window) {
 }
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
+  context = ctx;
   GFont numbers_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
-  //GFont player_font = 
   draw_board(ctx, numbers_font);
-  draw_player(ctx, get_player(), true, numbers_font);
+  draw_player(ctx, get_player());
+  if (gameover) {
+    draw_text();
+  }
 }
 
 

@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <inttypes.h>
 #include "game.h"
+#include "greed.h"
 
 uint32_t score = 0;
 uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
@@ -71,12 +72,6 @@ void setup() {
   reset();
 }
 
-// TODO: i'm pretty sure this function makes no sense here, delete?
-void loop() {
-  hint();
-  movement();
-}
-
 void reset() {
   score = 0;
   player.x = random_range(1, BOARD_WIDTH - 2);
@@ -99,7 +94,7 @@ void fill_board() {
   board[player.y][player.x] = 0;
 }
 
-void movement() {
+void movement(GContext *ctx) {
   if (is_empty(buttons)) {
     return;
   }
@@ -129,7 +124,8 @@ void movement() {
     int32_t percentage_fraction_part = (int32_t)((percentage - (float)percentage_whole_part) * 10.0f); 
     snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 " %" PRIi32 ".%" PRIi32 "%%", score, percentage_whole_part, percentage_fraction_part);
     // TODO: draw game_over_buff onto the screen, and then wait to be reset
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", game_over_buff);
+    set_gameover_text(game_over_buff);
+    set_gameover(true);
     reset();
   }
 }
