@@ -39,6 +39,34 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 uint32_t score = 0;
 uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
 
+// The different plaltforms have different usable screen area, so mask off the
+// parts that aren't usable:
+uint8_t board_mask[BOARD_HEIGHT][BOARD_WIDTH] =
+#ifdef PBL_PLATFORM_GABBRO
+  {
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
+    { 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0 },
+    { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+    { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 },
+    { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 },
+    { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+  };
+#else
+  { 0 }; // This shoudn't happen
+#endif
+
+
 struct movement_vector buttons = { 0 };
 
 struct player player = { 1, 1 };
@@ -72,12 +100,20 @@ void setup() {
   reset();
 }
 
-void reset() {
-  score = 0;
-  player.x = random_range(1, BOARD_WIDTH - 2);
-  player.y = random_range(1, BOARD_HEIGHT - 2);
+void place_player() {
+  do {
+    player.x = random_range(0, BOARD_WIDTH + 1); // + 1 because max is exclusive
+    player.y = random_range(0, BOARD_HEIGHT + 1);
+  }
+  while(board_mask[player.y][player.x] == 0);
+}
 
+void reset() {
+  score = 0;\
+  place_player();
   fill_board();
+  board[player.y][player.x] = 0;
+
 }
 
 // return a random number betweeen min (inclusive) and max (exclusive)
@@ -85,13 +121,22 @@ int32_t random_range(int32_t min, int32_t max) {
   return (rand() % max) + min;
 }
 
+void apply_board_mask() {
+  for (size_t y = 1; y < BOARD_HEIGHT; y++) {
+    for (size_t x = 1; x < BOARD_WIDTH; x++) {
+      board[y][x] = board_mask[y][x] * board[y][x];
+    }
+  }
+}
+
 void fill_board() {
-  for (size_t y = 1; y < BOARD_HEIGHT - 1; y++) {
-    for (size_t x = 1; x < BOARD_WIDTH - 1; x++) {
+  for (size_t y = 1; y < BOARD_HEIGHT; y++) {
+    for (size_t x = 1; x < BOARD_WIDTH; x++) {
       board[y][x] = random_range(1, MAX_NUMBER);
     }
   }
-  board[player.y][player.x] = 0;
+
+  apply_board_mask();
 }
 
 void movement(GContext *ctx) {

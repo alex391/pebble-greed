@@ -167,15 +167,15 @@ GRect fudge_rectangle(GRect rect) {
 
 void draw_board(GContext *ctx, const GFont font)
 {
-  for (int32_t y = 1; y < BOARD_HEIGHT - 1; y++) {
-    for (int32_t x = 1; x < BOARD_WIDTH - 1; x++) {
+  for (int32_t y = 1; y < BOARD_HEIGHT; y++) {
+    for (int32_t x = 1; x < BOARD_WIDTH; x++) {
       int8_t board_value = board_get(x, y);
       if (board_value < 0) {
         debug_log("Tried to draw the board out of bounds!", __LINE__);
         continue; // just skip it
       }
 
-      GRect text_bounds = { .origin = board_coordinate_to_gpoint(x - 1, y - 1), .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
+      GRect text_bounds = { .origin = board_coordinate_to_gpoint(x, y), .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
       char text_buffer[2] = { board_value + '0', '\0' };
       graphics_context_set_text_color(ctx, get_color(board_value));
       graphics_draw_text(ctx, text_buffer, font, fudge_top_margin(text_bounds), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -185,7 +185,7 @@ void draw_board(GContext *ctx, const GFont font)
 
 void draw_player(GContext *ctx, struct player player) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Drawing player at %d, %d", player.x, player.y);
-  GPoint text_gpoint = board_coordinate_to_gpoint(player.x - 1, player.y - 1);
+  GPoint text_gpoint = board_coordinate_to_gpoint(player.x, player.y);
   GRect text_bounds = { .origin = text_gpoint, .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, fudge_rectangle(text_bounds), 0, GCornerNone);

@@ -28,10 +28,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
-// two bigger than the actuall playable area to pad with zero around the edges
-// TODO: set these to the right value for all platforms - or calculate based on screen size
-#define BOARD_WIDTH (15 + 2)
-#define BOARD_HEIGHT (14 + 2)
+// the playable area on the largest platform - which at the time of writing is
+// gabbro
+#define BOARD_WIDTH 20
+#define BOARD_HEIGHT 17
 
 // in milliseconds
 #define BLINKING_DELAY 500
