@@ -5,7 +5,7 @@ BOARD_HEIGHT = 17
 SCREEN_DIAMETER = 260
 CHARACTER_WIDTH = 13
 CHARACTER_HEIGHT = 16
-
+FLOAT_TOLERANCE = 1
 
 def board_coordinate_to_screen_box(x: int, y: int) -> list[tuple[int, int]]:
     x = x * CHARACTER_WIDTH
@@ -25,7 +25,24 @@ def distance(p1, p2, q1, q2):
 
 def on_screen(x, y) -> bool:
     screen_radius = SCREEN_DIAMETER // 2
-    return distance(x, y, screen_radius, screen_radius) <= screen_radius
+    return distance(x, y, screen_radius, screen_radius) < screen_radius + FLOAT_TOLERANCE
+
+
+def print_board_mask(board_mask):
+    print("{")
+    for j, row in enumerate(board_mask):
+        print("  { ", end="")
+        for i, x in enumerate(row):
+            if i == len(row) - 1:
+                print(f"{x}", end="")
+            else:
+                print(f"{x}, ", end="")
+        if j == len(board_mask) - 1:
+            print(" }")
+        else:
+            print(" },")
+
+    print("};")
 
 
 def main():
@@ -42,22 +59,7 @@ def main():
             board_mask_row.append(mask)
         board_mask.append(board_mask_row)
 
-
-    print("{")
-    for j, row in enumerate(board_mask):
-        print("  { ", end="")
-        for i, x in enumerate(row):
-            if i == len(row) - 1:
-                print(f"{x}", end="")
-            else:
-                print(f"{x}, ", end="")
-        if j == len(board_mask) - 1:
-            print(" }")
-        else:
-            print(" },")
-
-    print("};")
-    
+    print_board_mask(board_mask)
 
 
 if __name__ == "__main__":

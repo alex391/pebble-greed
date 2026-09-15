@@ -167,13 +167,9 @@ GRect fudge_rectangle(GRect rect) {
 
 void draw_board(GContext *ctx, const GFont font)
 {
-  for (int32_t y = 1; y < BOARD_HEIGHT; y++) {
-    for (int32_t x = 1; x < BOARD_WIDTH; x++) {
-      int8_t board_value = board_get(x, y);
-      if (board_value < 0) {
-        debug_log("Tried to draw the board out of bounds!", __LINE__);
-        continue; // just skip it
-      }
+  for (int32_t y = 0; y < BOARD_HEIGHT; y++) {
+    for (int32_t x = 0; x < BOARD_WIDTH; x++) {
+      uint8_t board_value = board_get(x, y);
 
       GRect text_bounds = { .origin = board_coordinate_to_gpoint(x, y), .size = { .w = CHARACTER_WIDTH, .h = CHARACTER_HEIGHT } };
       char text_buffer[2] = { board_value + '0', '\0' };
@@ -194,6 +190,7 @@ void draw_player(GContext *ctx, struct player player) {
 
 void draw_text()
 {
+  // TODO this is broken on round dispays
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Drawing text: %s", gameover_text);
   GFont text_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
   GRect text_bounds = { .origin = { 0 }, .size = { .w = PBL_DISPLAY_WIDTH, .h = PBL_DISPLAY_HEIGHT } };

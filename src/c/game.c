@@ -37,12 +37,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "greed.h"
 
 uint32_t score = 0;
+// Typically a good idea to use board_get and board_set to access this instead
 uint8_t board[BOARD_HEIGHT][BOARD_WIDTH] = { 0 };
 
 // The different plaltforms have different usable screen area, so mask off the
 // parts that aren't usable:
 uint8_t board_mask[BOARD_HEIGHT][BOARD_WIDTH] =
-#ifdef PBL_PLATFORM_GABBRO
+#if defined(PBL_PLATFORM_GABBRO)
   {
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0 },
@@ -62,14 +63,72 @@ uint8_t board_mask[BOARD_HEIGHT][BOARD_WIDTH] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
   };
-#else
-  { 0 }; // This shoudn't happen
+#elif defined(PBL_PLATFORM_EMERY)
+  {
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+  };
+#elif defined(PBL_PLATFORM_CHALK)
+  {
+    { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+  };
+#else // all the other platforms have the same screen size
+  {
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+  };
 #endif
 
 
 struct movement_vector buttons = { 0 };
 
-struct player player = { 1, 1 };
+struct player player = { 0, 0 };
 
 
 bool is_empty(struct movement_vector this) {
@@ -77,15 +136,26 @@ bool is_empty(struct movement_vector this) {
 }
 
 uint8_t movement_distance(struct movement_vector this) {
- return board[player.y + this.y][player.x + this.x];
+  return board_get(player.x + this.x ,player.y + this.y);
 }
 
-// Get from the board, returns -1 if x or y are out of bounds
-int8_t board_get(int32_t x, int32_t y) {
+// Get from the board, returns 0 if x or y are out of bounds
+uint8_t board_get(int32_t x, int32_t y) {
   if (x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT) {
     return board[y][x];
   }
-  return -1;
+  return 0;
+}
+
+// Set the board at a cooridnate. Returns false if x or y are out of bounds and
+// leavs the board unchanged. Otherwise, returns true and sets the board at
+// that coordinate to value
+bool board_set(int32_t x, int32_t y, uint8_t value) {
+  if (x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT) {
+    board[y][x] = value;
+    return true;
+  }
+  return false;
 }
 
 struct player get_player() {
@@ -101,19 +171,23 @@ void setup() {
 }
 
 void place_player() {
+  uint16_t i = 0;
   do {
     player.x = random_range(0, BOARD_WIDTH + 1); // + 1 because max is exclusive
     player.y = random_range(0, BOARD_HEIGHT + 1);
+    i++;
+    if(i > INT16_MAX) { // arbitrary limit
+      log_and_spin("place_player failed to find a starting position in a reasonable ammount of time!", __LINE__);
+    }
   }
   while(board_mask[player.y][player.x] == 0);
 }
 
 void reset() {
-  score = 0;\
+  score = 0;
   place_player();
   fill_board();
-  board[player.y][player.x] = 0;
-
+  board_set(player.x, player.y, 0);
 }
 
 // return a random number betweeen min (inclusive) and max (exclusive)
@@ -122,17 +196,17 @@ int32_t random_range(int32_t min, int32_t max) {
 }
 
 void apply_board_mask() {
-  for (size_t y = 1; y < BOARD_HEIGHT; y++) {
-    for (size_t x = 1; x < BOARD_WIDTH; x++) {
-      board[y][x] = board_mask[y][x] * board[y][x];
+  for (int32_t y = 0; y < BOARD_HEIGHT; y++) {
+    for (int32_t x = 0; x < BOARD_WIDTH; x++) {
+      board_set(x, y, board_mask[y][x] * board_get(x, y));
     }
   }
 }
 
 void fill_board() {
-  for (size_t y = 1; y < BOARD_HEIGHT; y++) {
-    for (size_t x = 1; x < BOARD_WIDTH; x++) {
-      board[y][x] = random_range(1, MAX_NUMBER);
+  for (int32_t y = 0; y < BOARD_HEIGHT; y++) {
+    for (int32_t x = 0; x < BOARD_WIDTH; x++) {
+      board_set(x, y, random_range(1, MAX_NUMBER));
     }
   }
 
@@ -156,10 +230,10 @@ void movement(GContext *ctx) {
   for (; movement_dist > 0; movement_dist--) {
     player.x += buttons.x;
     player.y += buttons.y;
-    board[player.y][player.x] = 0;
+    board_set(player.x, player.y, 0);
     score++;
   }
-  board[player.y][player.x] = 0;
+  board_set(player.x, player.y, 0);
 
   valid_directions_count = get_valid_directions(valid_directions);
   if (valid_directions_count == 0) {
@@ -168,7 +242,6 @@ void movement(GContext *ctx) {
     int32_t percentage_whole_part = (int32_t)percentage;
     int32_t percentage_fraction_part = (int32_t)((percentage - (float)percentage_whole_part) * 10.0f); 
     snprintf(game_over_buff, sizeof(game_over_buff), "Game over! Score: %" PRIu32 " %" PRIi32 ".%" PRIi32 "%%", score, percentage_whole_part, percentage_fraction_part);
-    // TODO: draw game_over_buff onto the screen, and then wait to be reset
     set_gameover_text(game_over_buff);
     set_gameover(true);
     reset();
@@ -277,7 +350,7 @@ bool check_direction(struct movement_vector direction) {
   for (; movement_dist > 0; movement_dist--) {
     temp_player.x += direction.x;
     temp_player.y += direction.y;
-    if (board[temp_player.y][temp_player.x] == 0) {
+    if (board_get(temp_player.x, temp_player.y) == 0) {
       return false;
     }
   }

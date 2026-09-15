@@ -24,5 +24,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 void set_gameover_text(const char *text);
 void set_gameover(bool value);
+void log_and_spin(const char *message, int32_t line);
 
 #endif

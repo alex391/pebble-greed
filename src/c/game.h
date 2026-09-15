@@ -52,12 +52,13 @@ void reset();
 void setup();
 bool is_empty(struct movement_vector);
 uint8_t movement_distance(struct movement_vector);
-int8_t board_get(int32_t x, int32_t y);
+uint8_t board_get(int32_t x, int32_t y);
 bool movement_vector_equals(struct movement_vector lhs, struct movement_vector rhs);
 int32_t random_range(int32_t min, int32_t max);
 struct player get_player();
 void set_buttons(int8_t x, int8_t y);
 void combine_buttons(enum direction direction);
+bool board_set(int32_t x, int32_t y, uint8_t value);
 
 struct player {
   uint8_t x;
